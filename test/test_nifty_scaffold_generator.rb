@@ -218,7 +218,7 @@ class TestNiftyScaffoldGenerator < Test::Unit::TestCase
     
       should "redirect to line item show page, not index" do
         assert_generated_file "app/controllers/line_items_controller.rb" do |body|
-          assert_match "redirect_to @line_item", body
+          assert_match "redirect_to line_item_url(@line_item)", body
           assert_no_match(/redirect_to line_items_url/, body)
         end
       end

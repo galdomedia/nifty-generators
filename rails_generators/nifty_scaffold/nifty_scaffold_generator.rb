@@ -64,30 +64,34 @@ class NiftyScaffoldGenerator < Rails::Generator::Base
       
       unless options[:skip_controller]
         m.directory "app/controllers"
-        m.template "controller.rb", "app/controllers/#{plural_name}_controller.rb"
+        m.directory "app/controllers/#{admin_dir}"
+        m.template "controller.rb", "app/controllers/#{admin_dir}#{plural_name}_controller.rb"
         
         m.directory "app/helpers"
-        m.template "helper.rb", "app/helpers/#{plural_name}_helper.rb"
+        m.directory "app/helpers/#{admin_dir}"
+        m.template "helper.rb", "app/helpers/#{admin_dir}#{plural_name}_helper.rb"
         
-        m.directory "app/views/#{plural_name}"
+        m.directory "app/views/#{admin_dir}#{plural_name}"
         controller_actions.each do |action|
           if File.exist? source_path("views/#{view_language}/#{action}.html.#{view_language}")
-            m.template "views/#{view_language}/#{action}.html.#{view_language}", "app/views/#{plural_name}/#{action}.html.#{view_language}"
+            m.template "views/#{view_language}/#{action}.html.#{view_language}", "app/views/#{admin_dir}#{plural_name}/#{action}.html.#{view_language}"
           end
         end
       
         if form_partial?
-          m.template "views/#{view_language}/_form.html.#{view_language}", "app/views/#{plural_name}/_form.html.#{view_language}"
+          m.template "views/#{view_language}/_form.html.#{view_language}", "app/views/#{admin_dir}#{plural_name}/_form.html.#{view_language}"
         end
       
         m.route_resources plural_name
         
         if rspec?
           m.directory "spec/controllers"
-          m.template "tests/#{test_framework}/controller.rb", "spec/controllers/#{plural_name}_controller_spec.rb"
+          m.directory "spec/controllers/#{admin_dir}"
+          m.template "tests/#{test_framework}/controller.rb", "spec/controllers/#{admin_dir}#{plural_name}_controller_spec.rb"
         else
           m.directory "test/functional"
-          m.template "tests/#{test_framework}/controller.rb", "test/functional/#{plural_name}_controller_test.rb"
+          m.directory "test/functional/#{admin_dir}"
+          m.template "tests/#{test_framework}/controller.rb", "test/functional/#{admin_dir}#{plural_name}_controller_test.rb"
         end
       end
     end
@@ -115,6 +119,22 @@ class NiftyScaffoldGenerator < Rails::Generator::Base
   
   def plural_name
     name.underscore.pluralize
+  end
+  
+  def admin_name
+    options[:admin].blank? ? "" : "Admin::"
+  end
+  
+  def admin_prefix
+    options[:admin].blank? ? "" : "admin_"
+  end
+  
+  def admin_form
+    options[:admin].blank? ? "" : ":admin, "
+  end
+  
+  def admin_dir
+    options[:admin].blank? ? "" : "admin/"
   end
   
   def class_name
@@ -145,7 +165,7 @@ class NiftyScaffoldGenerator < Rails::Generator::Base
   
   def items_path(suffix = 'path')
     if action? :index
-      "#{plural_name}_#{suffix}"
+      "#{admin_prefix}#{plural_name}_#{suffix}"
     else
       "root_#{suffix}"
     end
@@ -153,7 +173,7 @@ class NiftyScaffoldGenerator < Rails::Generator::Base
   
   def item_path(suffix = 'path')
     if action? :show
-      "@#{singular_name}"
+      "#{admin_prefix}#{singular_name}_#{suffix}(@#{singular_name})"
     else
       items_path(suffix)
     end
@@ -161,7 +181,7 @@ class NiftyScaffoldGenerator < Rails::Generator::Base
   
   def item_path_for_spec(suffix = 'path')
     if action? :show
-      "#{singular_name}_#{suffix}(assigns[:#{singular_name}])"
+      "#{admin_prefix}#{singular_name}_#{suffix}(assigns[:#{singular_name}])"
     else
       items_path(suffix)
     end
@@ -169,7 +189,7 @@ class NiftyScaffoldGenerator < Rails::Generator::Base
   
   def item_path_for_test(suffix = 'path')
     if action? :show
-      "#{singular_name}_#{suffix}(assigns(:#{singular_name}))"
+      "#{admin_prefix}#{singular_name}_#{suffix}(assigns(:#{singular_name}))"
     else
       items_path(suffix)
     end
@@ -211,6 +231,7 @@ protected
     opt.on("--testunit", "Use test/unit for test files.") { options[:test_framework] = :testunit }
     opt.on("--rspec", "Use RSpec for test files.") { options[:test_framework] = :rspec }
     opt.on("--shoulda", "Use Shoulda for test files.") { options[:test_framework] = :shoulda }
+    opt.on("--admin", "Put files in admin/ folder") { |v| options[:admin] = v }
   end
   
   # is there a better way to do this? Perhaps with const_defined?
